@@ -1,0 +1,111 @@
+---
+author: "Kate Henderson, Devin Jones, Claire Qubain"
+date: "August 11, 2017"
+output:
+  pdf_document:
+  fig_height: 3
+  fig_width: 5
+title: "Lab 3"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Situation
+
+- Birner A, Seiler S, Lackner N, Bengesser SA, Queissner R, Fellendorf FT, et al. (2015) Cerebral White Matter Lesions and Affective Episodes Correlate in Male Individuals with Bipolar Disorder. _PLoS ONE_ 10(8): e0135313. doi:10.1371/journal.pone.0135313
+
+- We will focus on the `nWML_sum` measurement as a response variable. This is their volume of cerebral white matter lesions measurement that is `normalized' by the individual total cranial volume, which I think this means divided by it but that can't be verified in the provided information. Treat the response as having units of "normalized volume" even though it is hard to be as specific as I would like with that.
+
+- Of particular interest is replicating and critiquing their analysis that supports "For differences in WML-load, BD patients and controls were analyzed using a univariate covariance analysis model (ANCOVA) controlling for the confounding factor age and additionally for BMI, smoking, and diabetes, as the groups differed in these parameters." So in the following, fit a model that compares normalized WML volumes between the BD and control group, also incorporating the age, BMI, smoking, and diabetes status of the patients.
+
+## Load the data set and do some explorations
+
+- The data set is posted on D2L for you in _bipolar.csv_. There is an information file about the data set in "datafile_bipolar.xlsx" in the Lab 3 folder as well.
+
+- Use the "nWML_sum" variable  as the response variable - it is the normalized lesion volume.  Note that in Table 1 and 2, they report the WML volumes to compare groups but analyze using this normalized version of the variable in the model we will try to match. 
+
+```{r, warning=F, message=F}
+require(readr)
+bddata<-read.csv("/Users/claire/Google Drive/2017fall/stat512/Week 3/bipolardata.csv")
+require(tibble)
+glimpse(bddata)
+require(mosaic)
+favstats(nWML_sum ~ age1, data = bddata)
+
+```
+
+## Questions to answer
+
+1) Create categorical versions of any variables we need to fit the model that they describe and report your code. 
+
+```{r, warning=F, message=F}
+bddata$sexf<-factor(bddata$sex) #Not needed for the current model but useful to have as a categorical variable
+bddata$group<-factor(bddata$group) 
+bddata$smoking_yes_no <- factor(bddata$smoking_yes_no)
+bddata$DM <- factor(bddata$DM)
+```
+
+
+2) Fit the model they describe and report the _summary_ of the model. 
+
+
+```{r, warning=F, message=F}
+mod1 <- lm(nWML_sum ~ age1 + DM + smoking_yes_no + BMI + group, data = bddata)
+summary(mod1)
+```
+
+3) Make and report an `effects` plot of the model.
+```{r, warning=F, message=F}
+#Install and load the effects package
+require(effects)
+plot(allEffects(mod1))
+```
+
+
+4) Report and interpret the difference in BD and HC based on this model.
+
+After accounting for age, diabetes, smoking, and BMI, the treated patients have 0.12 $mm^3$ greater intercranial space compared with the control group. 
+
+5) Use the `anova` function to generate a test for whether we need to control for at least one of the age, diabetes status, smoking status, and BMI variables. The authors controlled for these variables but did not report this result. Report your code, _output_ (meaning the results of the running the code), and a sentence that reports the results of the test that can stand alone without the output. The sentence should discuss "evidence", discuss what was being tested, report the test statistic and its distribution under the null, and what the test is conditional on.
+
+```{r, warning=F, message=F}
+require(car)
+mod2 <- lm(nWML_sum ~ group, data = bddata)
+summary(mod2)
+anova(mod2, mod1)
+```
+
+There is strong evidence, after adjusting for group, that we need to account for at least one of the the following factors in the model: diabetes, age, smoking, and body mass index (ESS F-test, F(5) = 8.88, p-value < 0.0001). 
+
+6) Perform an ESS F-test that should come very close to replicating the result for `group` in the author's Table 1. Just report code and results and clearly report the degrees of freedom for the result (something the author's failed to do).
+
+```{r, warning=F, message=F}
+mod3 <- lm(nWML_sum ~ age1 + DM + smoking_yes_no + BMI, data = bddata)
+anova(mod3, mod1)
+```
+
+Ess f-test F(1) = 4.0, p-value = 0.047
+, 
+7) Use the `Anova` function from the `car` package to get the same result for `group`. Report code and results. No discussion.
+
+```{r, warning=F, message=F}
+require(car)
+Anova(mod4)
+```
+
+F(1) = 4.0083, p-value = 0.047
+
+8) Fit a model with `group` as the first of the explanatory variables and run `anova` on it. Report the result and discuss the hypothesis being tested for the `group` variable row.
+```{r, warning=F, message=F}
+mod4 <- lm(nWML_sum ~ group + age1 + DM + smoking_yes_no + BMI, data = bddata)
+anova(mod4)
+```
+F(1) = 7.3470, p-value = 0.007, $H_{0}$ : drop group **elaborate here**
+ 
+9) Modify your model so you can use the `anova` function on that new model only to get the same test result for `group` that you obtained from `Anova`. Report code and results. No Discussion.
+```{r, warning=F, message=F}
+anova(mod1)
+```
+F(1, 148) = 4.0083, p-valure = 0.047
