@@ -1,0 +1,100 @@
+---
+title: "Lab 4"
+output:
+  pdf_document:
+    fig_height: 4
+    fig_width: 8
+date: "September 20, 2017"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Diagnostics and log-transformations:
+
+```{r, warning=F, message=F}
+setwd("/Users/claire/Google Drive/2017fall/stat512/Week 3")
+bddata<-read.csv("bipolardata.csv",header=T)
+bddata$groupf<-factor(bddata$group) 
+bddata$DMf<-factor(bddata$DM)
+bddata$smoking_yes_nof<-factor(bddata$smoking_yes_no)
+model1<-lm(nWML_sum~groupf+age1+DMf+smoking_yes_nof+BMI,data=bddata) 
+```
+
+1) For `model1` from Lab 3, discuss the potential for any influential points based on the Cook's D info available in the diagnostic plots at the end of the lab. 
+```{r}
+par(mfrow = c(2,2))
+plot(model1)
+```
+
+Record 45 has a Cook's distance >0.5 and <1 (closer to 1).  It is likely influential in the model and can be removed.
+
+2) We made the four standard diagnostic plots at the end of the code in Lab 3. Note the plot(s) used to assess each assumption and what it suggests about the model assumptions for this model:
+
+    i) Linearity of the response with the predictor variables.
+    
+ Linearity can be assesed using the normal q-q plot. Here, evidence of a right skewed distribution exists.
+ 
+    ii) Constant variance of residuals
+    
+    The residual vs. fitted and Scale-location plots help to review constance variance. Some evidence of non-constant variance exists because a curve (and some funneling) appears in the residual vs. fitted plot.  Because of this, we can not use the Scale-location plot to review constant variance.
+    
+    iii) Normally distributed residuals (and no outliers because normal distributions do not generate extreme outliers).
+
+After looking at the normal q-q and residual vs. leverage plot, some evidence that the model is not normal appears due to outliers identified.
+
+3) Whether you think it is necessary or not, consider a log-transformation of the response (normalized white matter lesion volume). It is critical when using log-transformations that you know which kind of transformation you are using and verify you are not applying it to any negative numbers or 0s. 
+    
+    i) Verify that all the response variable values are greater than 0. Report your result that supports this.
+    
+```{r, warning=F, message=F}
+
+#Report code and results here
+summary(bddata$nWML_sum)
+```
+    ii) In R, there are related functions of `log`, `log10`, `log2` and `log(x,base=)`. Explain the differences between `log`, `log10`, and `log2` and discuss which one you would use here (you may want to answer the other parts and then revisit your answer to this question). 
+ 
+From r help: "log() computes the natural log of the data, log10 computes common (i.e., base 10) log, log2 computes binary (i.e., base 2) logarithms, The general form logb(x, base) computes logarithms with base log"
+    
+    iii) Apply your preferred log-transformation to the response and repeat fitting the model and making the standard four diagnostic plots. Discuss the changes to results related to the assessment of constant variance, normality, and influential points. 
+    
+Funnelling still appears in the residual vs. fitted plot when compared to the untransformed data, and issues with constant variance are not completely resolved. However, the transformation improved our interpreation of the constant variance assumption. 
+
+The distribution of the response variable in the transformed model is still not normal (evidence of a heaby tailed distribution exists), however skewness is not as extreme as in the untransformed model, and now record 45 can be kept in the model because its Cook's D is < 0.5.  
+    
+```{r, warning=F, message=F,fig.width=8,fig.height=8}
+#Fit a model with log-transformed response and make the 4 panel diagnostic plot array
+par(mfrow=c(2,2))
+plot(model.log<-lm(log(nWML_sum) ~groupf+age1+DMf+smoking_yes_nof+BMI,data=bddata) )
+```        
+
+iv) Fit the same model using a different version of the log-transformation of the response. Which aspects of the diagnostic plots change and does it change your assessment of any assumptions?
+    
+```{r, warning=F, message=F,fig.width=8,fig.height=8}
+#Fit a model with log-transformed response and make the 4 panel diagnostic plot array
+par(mfrow=c(2,2))
+plot(model.log10<-lm(log10(nWML_sum) ~groupf+age1+DMf+smoking_yes_nof+BMI,data=bddata) )
+``` 
+The range of the response in the residual vs.fitted log10 
+
+4) Using your new model with your preferred transformed response (in 3.iii), generate and report results for the group difference in a sentence (include strength of evidence). Add a sentence that discusses the estimated difference on the original normalized white matter lesion scale (no CI needed).
+
+```{r, warning=F, message=F}
+#Model summary, try confint() on your model to get 95% CI too but do not need to report it
+```    
+
+
+5) How does this compare to the researchers' original results (`model1`)? Which version would you report and why?
+
+
+6) Calculate the VIFs for your model with your preferred transformed response. Report the results and discuss whether this suggests any issues with multicollinearity.
+```{r, warning=F, message=F}
+require(car)
+#vif(modelname)
+```
+
+
+
+7) Do the VIFs change if you did not log-transform the responses or used a different base for your log transformation? Why?
+
